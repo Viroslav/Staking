@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "./IERC20.sol";
+import "hardhat/console.sol";
 
 contract Staking {
     IERC20 public immutable stakingToken;
@@ -54,6 +55,7 @@ contract Staking {
         updatedAt = _min(finishAt, block.timestamp);
 
         if (_account != address(0)) {
+            
             rewards[_account] = earned(_account);
             userRewardPerTokenPaid[_account] = rewardPerTokenStored;
         }
@@ -75,13 +77,14 @@ contract Staking {
             uint remainingRewards = (finishAt - block.timestamp) * rewardRate;
             rewardRate = (_amount + remainingRewards) / duration;
         }
-
+        
         require(rewardRate > 0, "reward rate = 0");
+
         require(
             rewardRate * duration <= rewardsToken.balanceOf(address(this)),
             "reward amount > balance"
         );
-
+        
         finishAt = block.timestamp + duration;
         updatedAt = block.timestamp;
     }
@@ -91,7 +94,7 @@ contract Staking {
             return rewardPerTokenStored;
         }
 
-        return rewardPerTokenStored + (_min(finishAt, block.timestamp) - updatedAt) * rewardRate * 1e18 / totalSupply;
+        return rewardPerTokenStored + (_min(finishAt, block.timestamp) - updatedAt) * rewardRate * 1e18  / totalSupply;
     }
 
     function stake(uint _amount) external updateReward(msg.sender) {
@@ -100,6 +103,8 @@ contract Staking {
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
         totalSupply += _amount;
+        console.log('User %o staked %o', msg.sender, _amount);
+        console.log('Now total supply is %o', totalSupply);
     }
 
     function withdraw(uint _amount) external updateReward(msg.sender) {
@@ -108,10 +113,14 @@ contract Staking {
         balanceOf[msg.sender] -= _amount;
         totalSupply -= _amount;
         stakingToken.transfer(msg.sender, _amount);
+        console.log('User %o withdrawed %o money', msg.sender, _amount);
+        console.log('Now total supply is %o', totalSupply);
     }
 
     function earned(address _account) public view returns (uint) {
         // show how much does account earn for current time
+        console.log('Blocks mined: %o', _min(finishAt, block.timestamp) - updatedAt);
+        console.log('User %o earned %o money', _account, ((balanceOf[_account] * (rewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18) + rewards[_account]);
         return
             (
                 (balanceOf[_account] * (rewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18
@@ -120,6 +129,7 @@ contract Staking {
 
     function getReward() external updateReward(msg.sender) {
         uint reward = rewards[msg.sender];
+        console.log('User %o took reward %o', msg.sender, reward);
         if (reward > 0) {
             rewards[msg.sender] = 0;
             rewardsToken.transfer(msg.sender, reward);

@@ -3,14 +3,6 @@ const token1 = artifacts.require('StakingToken')
 const token2 = artifacts.require('RewardToken')
 const { mine } = require("@nomicfoundation/hardhat-network-helpers");
 
-function sleep(milliseconds) {
-  const date = Date.now();
-  let currentDate = null;
-  do {
-    currentDate = Date.now();
-  } while (currentDate - date < milliseconds);
-}
-
 contract('Staking', ([owner, user1, user2]) => {
   let staking, stakingToken, rewardsToken
 
@@ -20,10 +12,10 @@ contract('Staking', ([owner, user1, user2]) => {
     rewardsToken = await token2.new({ from: owner })
 
     // Transfer some STK and RWD tokens to user1 and user2
-    await stakingToken.transfer(user1, 100, { from: owner })
-    await rewardsToken.transfer(user1, 100, { from: owner })
-    await stakingToken.transfer(user2, 100, { from: owner })
-    await rewardsToken.transfer(user2, 100, { from: owner })
+    await stakingToken.transfer(user1, 1000, { from: owner })
+    await rewardsToken.transfer(user1, 1000, { from: owner })
+    await stakingToken.transfer(user2, 1000, { from: owner })
+    await rewardsToken.transfer(user2, 1000, { from: owner })
   })
 
   describe('Staking', () => {
@@ -126,6 +118,42 @@ contract('Staking', ([owner, user1, user2]) => {
 
   	  assert.equal(earned1, rewards * amount1 / (amount1 + amount2))
       assert.equal(earned2, rewards * amount2 / (amount1 + amount2))
+    })
+
+    it('final tests', async () => {
+      const amount1 = 50
+      const amount2 = 50
+      const rewards = 500
+      const duration = 20
+      
+      staking = await Staking.new(stakingToken.address, rewardsToken.address, { from: owner })
+      await rewardsToken.transfer(staking.address, 1000, { from: owner })
+      await staking.setRewardsDuration(duration, { from: owner })
+      
+
+  	  await stakingToken.approve(staking.address, amount1, { from: user1 })
+  	  await staking.stake(amount1, { from: user1 })
+
+      await stakingToken.approve(staking.address, amount2, { from: user2 })
+  	  await staking.stake(amount2, { from: user2 })
+      
+      await staking.notifyRewardAmount(rewards, { from: owner })
+  	  // Wait for some time to elapse for rewards to accrue
+      await mine(5);
+  	  const earned1 = await staking.earned(user1)
+      const earned2 = await staking.earned(user2)
+
+  	  assert.equal(earned1, Math.floor((rewards / duration * 5) * amount1 / (amount1 + amount2)))
+      assert.equal(earned2, Math.floor((rewards / duration * 5) * amount2 / (amount1 + amount2)))
+
+      await staking.withdraw(20, { from: user2 })
+
+      await mine(5);
+  	  const earned3 = await staking.earned(user1)
+      const earned4 = await staking.earned(user2)
+
+  	  assert.equal(earned3, 153)
+      assert.equal(earned4, 121)
     })
   })
 })
