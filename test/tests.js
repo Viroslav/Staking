@@ -44,7 +44,7 @@ contract('Staking', ([owner, user1, user2]) => {
       await staking.withdraw(amount, { from: user1 })
       assert.equal(await staking.balanceOf(user1), 100)
       assert.equal(await staking.totalSupply(), 100)
-      //assert.equal(await rewardsToken.balanceOf(user1), rewards)
+      assert.equal(await rewardsToken.balanceOf(user1), rewards)
     })
 
     it('should update rewards', async () => {
@@ -68,8 +68,15 @@ contract('Staking', ([owner, user1, user2]) => {
 
     it('should calculate earnings', async () => {
       const amount = 100
-      const rewards = 50
-      await staking
+  	const rewards = 50
+  	await stakingToken.approve(staking.address, amount, { from: user1 })
+  	await staking.stake(amount, { from: user1 })
+  	await staking.notifyRewardAmount(rewards, { from: owner })
+  	// Wait for some time to elapse for rewards to accrue
+  	await advanceTime(60)
+  	const earned = await staking.earned(user1)
+  	const expectedEarned = web3.utils.toBN(rewards).mul(web3.utils.toBN(60)).div(await staking.rewardDuration())
+  	assert.equal(earned.toString(), expectedEarned.toString())
     })
   })
 })
