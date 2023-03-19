@@ -1,0 +1,15 @@
+This is a JavaScript test script for a smart contract named Staking. The script uses the Truffle framework for deploying and testing smart contracts.
+
+The Staking contract allows users to stake stakingToken tokens and earn rewards in rewardsToken tokens. The script deploys mock ERC20 tokens for stakingToken and rewardsToken, and transfers some tokens to two users (user1 and user2).
+
+The script tests various functionalities of the Staking contract, including staking, withdrawing, updating rewards, and calculating earnings.
+
+The first test (should allow staking) tests if the contract allows a user to stake amount of stakingToken tokens, and the user's staked balance and the total staked supply are updated accordingly.
+
+The second test (should allow withdrawing) tests if the contract allows a user to withdraw amount of staked stakingToken tokens, and also rewards in rewardsToken tokens earned during the staking period. The user's balance and the total staked supply are updated accordingly.
+
+The third test (should update rewards) tests if the contract correctly updates the reward per token when a new reward amount is notified by the contract owner.
+
+The fourth test (should calculate earnings) tests if the contract correctly calculates the amount of rewards earned by a user during the staking period.
+
+Overall, the script provides a comprehensive set of tests to ensure that the Staking contract functions as intended.
